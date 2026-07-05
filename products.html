@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Katalog Produk - PT Go Nusantara</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<!-- ================= HEADER ================= -->
+<header class="header">
+    <div class="container">
+        <h1>PT GO NUSANTARA</h1>
+        <div class="menu-toggle">☰</div>
+        <nav class="navbar">
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="products.html">Products</a></li>
+                <li><a href="index.html#about">About</a></li>
+                <li><a href="index.html#contact">Contact</a></li>
+            </ul>
+        </nav>
+    </div>
+</header>
+<!-- ================= HERO ================= -->
+<section class="hero">
+    <div class="container">
+        <h2>Katalog Produk Industrial</h2>
+        <p>Pneumatic • Hydraulic • Valve • Sensor • Control System</p>
+    </div>
+</section>
+<!-- ================= PRODUCTS GRID ================= -->
+<section class="products">
+    <div class="container">
+        <div class="filter-buttons">
+    <button onclick="filterProducts('all')">All</button>
+    <button onclick="filterProducts('pneumatic')">Pneumatic</button>
+    <button onclick="filterProducts('sensor')">Sensor</button>
+    <button onclick="filterProducts('valve')">Valve</button>
+</div>
+        <div class="product-grid">
+            <!-- CARD 1 -->
+            <div class="product-card reveal" data-category="valve">
+                <img src="image/sanitary-valves-fitting.webp" alt="">
+                <h3>Sanitary Valve & Fitting</h3>
+            </div>
+            <!-- CARD 2 -->
+            <div class="product-card reveal" data-category="sensor">
+                <img src="image/sensor-switch.webp" alt="">
+                <h3>Sensor & Switch</h3>
+            </div>
+            <!-- CARD 3 -->
+            <div class="product-card reveal" data-category="pneumatic">
+                <img src="image/pneumatic-hydraulics.webp" alt="">
+                <h3>Pneumatic & Hydraulic</h3>
+            </div>
+            <!-- CARD 4 -->
+            <div class="product-card reveal" data-category="pvc_rubber">
+                <img src="image/pvc-pp-rubber.webp" alt="">
+                <h3>PVC / PP / Rubber Parts</h3>
+            </div>
+            <!-- CARD 5 -->
+            <div class="product-card reveal" data-category="sensor">
+                <img src="image/timer-counter-solid-state-relay.webp" alt="">
+                <h3>Timer & Relay</h3>
+            </div>
+            <!-- CARD 6 -->
+            <div class="product-card reveal" data-category="laminated-solenoid">
+                <img src="image/laminated-solenoid.webp" alt="">
+                <h3>Solenoid System</h3>
+            </div>
+        </div>
+    </div>
+</section>
+<!-- ================= FOOTER ================= -->
+<footer>
+    <div class="container">
+        <p>© 2026 PT Go Nusantara</p>
+    </div>
+</footer>
+<script src="main.js"></script>
+</body>
+</html>
