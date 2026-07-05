@@ -76,10 +76,19 @@ function revealOnScroll() {
         }
     }
 }
-window.addEventListener("scroll", revealOnScroll);
-function filterProducts(category) {
+window.addEventListener('scroll', revealOnScroll);
+revealOnScroll();
+function filterProducts(category, el) {
     const products = document.querySelectorAll(".product-card");
+    const buttons = document.querySelectorAll(".filter-buttons button");
 
+    // hapus active di semua tombol
+    buttons.forEach(btn => btn.classList.remove("active"));
+
+    // aktifkan tombol yang diklik
+    el.classList.add("active");
+
+    // filter produk
     products.forEach(product => {
         const type = product.getAttribute("data-category");
 
