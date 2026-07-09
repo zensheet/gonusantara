@@ -1,0 +1,15 @@
+# Folder sistem Node
+node_modules/
+package-lock.json
+
+# Folder Sanity (Sistem & Runtime)
+.sanity/
+dist/
+
+# File konfigurasi & rahasia
+.env
+.DS_Store
+
+# Folder lain yang tidak perlu di-upload
+.vscode/
+temp/
