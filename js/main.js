@@ -43,34 +43,93 @@ const client = createClient({
   apiVersion: '2026-07-09'
 });
 
-async function renderProduk(kategoriDipilih = 'all') {
+// Simpan semua data produk di memori supaya filter tidak perlu fetch ulang
+let semuaProduk = [];
+
+async function renderProduk(kategoriAwal = 'all') {
     const grid = document.getElementById('productGrid');
+    const filterBar = document.getElementById('filterBar');
     if (!grid) return; // Keluar jika bukan di halaman products.html
-    
-    // 1. Tarik semua data dari Sanity
-    const data = await client.fetch(`*[_type == "product"]{
-        name, shortDescription, specifications, application,
+
+    // 1. Fetch kategori dari Sanity → buat tombol filter secara otomatis
+    if (filterBar) {
+        const categories = await client.fetch(
+            `*[_type == "category"] | order(sortOrder asc) { title, "slug": slug.current }`
+        );
+
+        // Tambahkan tombol per kategori dari Sanity
+        categories.forEach(cat => {
+            const btn = document.createElement('button');
+            btn.textContent = cat.title;
+            btn.setAttribute('data-slug', cat.slug);
+            btn.onclick = function() { filterByCategory(cat.slug, this); };
+            filterBar.appendChild(btn);
+        });
+
+        // Tandai tombol aktif sesuai URL
+        filterBar.querySelectorAll('button').forEach(btn => {
+            const s = btn.getAttribute('data-slug') || 'all';
+            if (s === kategoriAwal) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+
+        // Isi juga footer category list jika ada
+        const footerList = document.getElementById('footerCatList');
+        if (footerList) {
+            categories.forEach(cat => {
+                const li = document.createElement('li');
+                li.innerHTML = `<a href="products.html?category=${cat.slug}">${cat.title}</a>`;
+                footerList.appendChild(li);
+            });
+        }
+    }
+
+    // 2. Fetch semua produk SEKALI
+    semuaProduk = await client.fetch(`*[_type == "product"] | order(sortOrder asc) {
+        name, shortDescription,
         "slug": slug.current,
         "imageUrl": mainImage.asset->url,
         "category": category->slug.current
     }`);
 
-    // 2. Filter data (kumpulkan yang cocok saja)
-    const dataTampil = kategoriDipilih === 'all' 
-        ? data 
-        : data.filter(p => p.category === kategoriDipilih);
+    // 3. Tampilkan produk sesuai kategori awal
+    tampilkanProduk(kategoriAwal, grid);
+}
 
-    // 3. Hapus apa yang ada di layar, lalu ganti dengan data yang cocok
+// Fungsi tampilkan produk di grid (tanpa fetch ulang)
+function tampilkanProduk(kategoriDipilih, grid) {
+    if (!grid) grid = document.getElementById('productGrid');
+    if (!grid) return;
+
+    const dataTampil = kategoriDipilih === 'all'
+        ? semuaProduk
+        : semuaProduk.filter(p => p.category === kategoriDipilih);
+
+    if (dataTampil.length === 0) {
+        grid.innerHTML = `<p style="text-align:center; color:#999; padding:40px; grid-column:1/-1;">Belum ada produk di kategori ini.</p>`;
+        return;
+    }
+
     grid.innerHTML = dataTampil.map(p => `
-        <a href="product-detail.html?slug=${p.slug}" style="text-decoration:none; color:inherit; display:block;">
+        <a href="product-detail.html?slug=${p.slug}">
             <div class="product-card">
-                ${p.imageUrl ? `<img src="${p.imageUrl}" style="width:100%;">` : ''}
-                <h3>${p.name}</h3>
-                <p>${p.shortDescription || '-'}</p>
+                ${p.imageUrl ? `<img src="${p.imageUrl}" style="width:100%; height:200px; object-fit:cover; border-radius:8px;">` : ''}
+                <h3 style="margin-top:12px; color:#0B3D91; font-size:16px;">${p.name}</h3>
+                <p style="font-size:14px; color:#666; margin-top:6px;">${p.shortDescription || ''}</p>
             </div>
         </a>
     `).join('');
 }
+
+// Fungsi filter yang dipanggil tombol (global supaya inline onclick bisa pakai)
+function filterByCategory(slug, el) {
+    // Update class active
+    document.querySelectorAll('#filterBar button').forEach(b => b.classList.remove('active'));
+    if (el) el.classList.add('active');
+    tampilkanProduk(slug);
+}
+window.filterByCategory = filterByCategory;
+
 
 // Fungsi render detail khusus untuk product-detail.html
 async function renderDetailProduk() {
