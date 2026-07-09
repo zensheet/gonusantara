@@ -31,7 +31,7 @@ export default {
     },
     {
       name: 'mainImage',
-      title: 'Foto Utama',
+      title: 'FotoUtama',
       type: 'image',
       options: {
         hotspot: true,
@@ -56,12 +56,12 @@ export default {
     },
     {
       name: 'specifications',
-      title: 'Spesifikasi Teknik',
+      title: 'SpesifikasiTeknik',
       type: 'text',
     },
     {
       name: 'application',
-      title: 'Aplikasi Penggunaan',
+      title: 'AplikasiPenggunaan',
       type: 'text',
     },
     {

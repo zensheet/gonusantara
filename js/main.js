@@ -34,127 +34,144 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     });
 });
 
-//==========================================
-// INTEGRASI SANITY (KHUSUS HALAMAN PRODUCTS)
-//==========================================
-const PROJECT_ID = "6mzyi14g"; 
-const DATASET = "production";
+import { createClient } from 'https://esm.sh/@sanity/client';
 
-const QUERY = encodeURIComponent(`*[_type == "product"]{
-  name,
-  description,
-  technicalSpec,
-  "slug": slug.current,
-  "category": category->slug.current,
-  "imageUrl": mainImage.asset->url
-}`);
+const client = createClient({
+  projectId: '6mzyi14g',
+  dataset: 'production',
+  useCdn: true,
+  apiVersion: '2026-07-09'
+});
 
-const SANITY_URL = `https://${PROJECT_ID}.apicdn.sanity.io/v2022-03-07/data/query/${DATASET}?query=${QUERY}`;
-
-async function fetchSanityProducts() {
-    // KUNCI UTAMA: Cari ID khusus milik halaman products.html
-    const gridContainer = document.getElementById("productGrid");
+async function renderProduk(kategoriDipilih = 'all') {
+    const grid = document.getElementById('productGrid');
+    if (!grid) return; // Keluar jika bukan di halaman products.html
     
-    // JIKA TIDAK KETEMU, BERARTI INI HALAMAN INDEX.HTML. STOP SCRIPT DAN JANGAN MERUSAK APAPAUN!
-    if (!gridContainer) {
-        console.log("Menjalankan mode halaman index.html (Data Sanity diabaikan).");
-        return; 
+    // 1. Tarik semua data dari Sanity
+    const data = await client.fetch(`*[_type == "product"]{
+        name, shortDescription, specifications, application,
+        "slug": slug.current,
+        "imageUrl": mainImage.asset->url,
+        "category": category->slug.current
+    }`);
+
+    // 2. Filter data (kumpulkan yang cocok saja)
+    const dataTampil = kategoriDipilih === 'all' 
+        ? data 
+        : data.filter(p => p.category === kategoriDipilih);
+
+    // 3. Hapus apa yang ada di layar, lalu ganti dengan data yang cocok
+    grid.innerHTML = dataTampil.map(p => `
+        <a href="product-detail.html?slug=${p.slug}" style="text-decoration:none; color:inherit; display:block;">
+            <div class="product-card">
+                ${p.imageUrl ? `<img src="${p.imageUrl}" style="width:100%;">` : ''}
+                <h3>${p.name}</h3>
+                <p>${p.shortDescription || '-'}</p>
+            </div>
+        </a>
+    `).join('');
+}
+
+// Fungsi render detail khusus untuk product-detail.html
+async function renderDetailProduk() {
+    const detailContainer = document.getElementById('productDetail');
+    if (!detailContainer) return;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const slug = urlParams.get('slug');
+    if (!slug) {
+        detailContainer.innerHTML = "<p>Produk tidak ditemukan.</p>";
+        return;
     }
 
     try {
-        const response = await fetch(SANITY_URL);
-        const result = await response.json();
-        const products = result.result;
+        const product = await client.fetch(`*[_type == "product" && slug.current == $slug][0]{
+            name, 
+            shortDescription, 
+            specifications, 
+            application,
+            isFeatured,
+            body,
+            "imageUrl": mainImage.asset->url,
+            "galleryUrls": gallery[].asset->url,
+            "category": category->title,
+            "categorySlug": category->slug.current,
+            "brand": brand->name
+        }`, { slug });
 
-        if (!products || products.length === 0) {
-            gridContainer.innerHTML = "<p style='text-align:center; width:100%;'>Belum ada produk di Sanity.</p>";
+        if (!product) {
+            detailContainer.innerHTML = "<p>Produk tidak ditemukan.</p>";
             return;
         }
 
-        // Jalankan render produk HANYA di halaman yang punya id="productGrid" (products.html)
-        gridContainer.innerHTML = products.map(product => {
-            const name = product.name || "Produk Tanpa Nama";
-            const imageSrc = product.imageUrl || 'images/placeholder.webp';
-            const kategoriSlug = product.category ? product.category.trim().toLowerCase() : 'tidak-ada';
-            
-            const deskripsi = product.description || "Tidak ada deskripsi.";
-            const spesifikasi = product.technicalSpec || "Tidak ada spesifikasi teknis.";
-            
-            return `
-                <div class="product-card active" data-category="${kategoriSlug}">
-                    <img src="${imageSrc}" alt="${name}">
-                    <h3>${name}</h3>
-                    <p class="product-desc" style="font-size: 14px; color: #666; margin-top: 5px; line-height: 1.4;">${deskripsi}</p>
-                    <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed #eee; text-align: left;">
-                        <strong style="font-size: 12px; color: #333; display: block;">Spesifikasi Teknis:</strong>
-                        <span style="font-size: 12px; color: #555; font-style: italic;">${spesifikasi}</span>
-                    </div>
+        // Import PortableTextToHTML secara dinamis dari ESM
+        const { toHTML } = await import('https://esm.sh/@portabletext/to-html');
+        const bodyHTML = product.body ? toHTML(product.body) : '';
+
+        // Gallery images HTML
+        const galleryHTML = (product.galleryUrls && product.galleryUrls.length > 0) ? `
+            <div class="detail-section">
+                <h3>Galeri Foto</h3>
+                <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap:12px; margin-top:10px;">
+                    ${product.galleryUrls.map(url => `<img src="${url}" style="width:100%; border-radius:8px; object-fit:cover; height:110px;">`).join('')}
                 </div>
-            `;
-        }).join("");
+            </div>
+        ` : '';
 
-        // ====================================================
-        // SISTEM AUTO-FILTER KATEGORI DARI URL PARAMS
-        // ====================================================
-        const urlParams = new URLSearchParams(window.location.search);
-        const autoFilter = urlParams.get('category');
-        
-        if (autoFilter) {
-            // 1. Jalankan filter produk secara langsung berdasarkan data-category
-            filterProducts(autoFilter);
-            
-            // 2. Cari tombol filter yang cocok di products.html untuk diberi class 'active'
-            try {
-                const buttons = document.querySelectorAll(".filter-buttons button");
-                buttons.forEach(btn => {
-                    const txt = btn.textContent || btn.innerText || "";
-                    const onclickAttr = btn.getAttribute("onclick") || "";
+        detailContainer.innerHTML = `
+            <a href="products.html${product.categorySlug ? '?category=' + product.categorySlug : ''}" class="detail-back-link">
+                <i class="fa-solid fa-arrow-left"></i> Kembali ke Katalog
+            </a>
+            <div class="product-detail-layout">
+                <div class="product-detail-image">
+                    ${product.imageUrl ? `<img src="${product.imageUrl}" alt="${product.name}">` : ''}
+                    ${galleryHTML}
+                </div>
+                <div class="product-detail-info">
+                    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                        <span class="detail-category">${product.category || 'Uncategorized'}</span>
+                        ${product.isFeatured ? `<span style="background:#FFF3CD; color:#b45309; font-size:12px; font-weight:700; padding:5px 12px; border-radius:20px; letter-spacing:1px;">⭐ FEATURED</span>` : ''}
+                    </div>
+                    <h1>${product.name}</h1>
+                    ${product.brand ? `<p style="color:#888; font-size:14px; margin:0;">Brand: <strong style="color:#0B3D91;">${product.brand}</strong></p>` : ''}
+                    <p class="detail-short-desc">${product.shortDescription || ''}</p>
                     
-                    if (
-                        txt.toLowerCase().includes(autoFilter.replace(/-/g, " ")) || 
-                        onclickAttr.toLowerCase().includes(autoFilter.toLowerCase())
-                    ) {
-                        buttons.forEach(b => b.classList.remove("active"));
-                        btn.classList.add("active");
-                    }
-                });
-            } catch (btnErr) {
-                console.log("Sinkronisasi tombol filter dilewati:", btnErr);
-            }
-        }
-        // ====================================================
-
-    } catch (error) {
-        console.error("Gagal memuat data dari Sanity:", error);
+                    ${bodyHTML ? `
+                    <div class="detail-section">
+                        <h3>Deskripsi Produk</h3>
+                        <div class="portable-text">${bodyHTML}</div>
+                    </div>` : ''}
+                    
+                    ${product.specifications ? `
+                    <div class="detail-section">
+                        <h3>Spesifikasi Teknis</h3>
+                        <p>${product.specifications}</p>
+                    </div>` : ''}
+                    
+                    ${product.application ? `
+                    <div class="detail-section">
+                        <h3>Aplikasi Penggunaan</h3>
+                        <p>${product.application}</p>
+                    </div>` : ''}
+                    
+                    <a href="https://wa.me/6282123968029?text=Halo%20saya%20tertarik%20dengan%20produk%20${encodeURIComponent(product.name)}" class="btn" target="_blank">
+                        <i class="fa-brands fa-whatsapp"></i> Request Quotation
+                    </a>
+                </div>
+            </div>
+        `;
+    } catch (e) {
+        console.error(e);
+        detailContainer.innerHTML = "<p>Gagal memuat produk.</p>";
     }
 }
 
-document.addEventListener("DOMContentLoaded", fetchSanityProducts);
+// Pasang fungsi ke window supaya tombol HTML bisa memanggilnya
+window.renderProduk = renderProduk;
+window.renderDetailProduk = renderDetailProduk;
 
-//==========================================
-// FUNGSI FILTER PRODUK (VERSI PASTI JALAN)
-//==========================================
-function filterProducts(category, el) {
-    console.log("Tombol diklik untuk kategori:", category); // Log ini harus muncul di Console F12
-    
-    const products = document.querySelectorAll("#productGrid .product-card");
-    const buttons = document.querySelectorAll(".filter-buttons button");
-
-    // Jika tombol diklik, kasih warna aktif
-    if (el) {
-        buttons.forEach(btn => btn.classList.remove("active"));
-        el.classList.add("active");
-    }
-
-    products.forEach(product => {
-        const productType = product.getAttribute("data-category") || "";
-        const filterType = category ? category.trim().toLowerCase() : "";
-
-        // Logika tampilkan
-        if (filterType === "all" || productType === filterType) {
-            product.style.display = "block";
-        } else {
-            product.style.display = "none";
-        }
-    });
-}
+// Jalankan saat pertama kali buka
+const urlParams = new URLSearchParams(window.location.search);
+const autoFilter = urlParams.get('category');
+renderProduk(autoFilter || 'all');
+renderDetailProduk();

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detail Produk - PT Go Nusantara</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+
+<header class="header">
+    <div class="container">
+        <a href="index.html" class="logo">
+            <img src="images/logo.png" alt="GO Nusantara">
+        </a>
+        <div class="menu-toggle">
+            <i class="fa-solid fa-bars"></i>
+        </div>
+        <nav class="navbar">
+            <a href="index.html#home">Home</a>
+            <a href="index.html#about">About</a>
+            <a href="index.html#products">Products</a>
+            <a href="index.html#contact">Contact</a>
+            <a href="https://wa.me/6282123968029" class="btn-header">Request Quotation</a>
+        </nav>
+    </div>
+</header>
+
+<section class="products" style="margin-top: 50px;">
+    <div class="container">
+        <!-- PENTING: ID ini digunakan oleh JS untuk merender detail -->
+        <div id="productDetail">
+            <p style="text-align:center; padding:50px;">Memuat data produk...</p>
+        </div>
+    </div>
+</section>
+
+<footer class="footer">
+    <div class="container footer-grid">
+        <div>
+            <img src="images/logo.png" class="footer-logo">
+            <p>PT. GO NUSANTARA merupakan supplier Industrial Components, Automation, Pneumatic, Hydraulic, Sanitary Equipment dan Engineering Material.</p>
+        </div>
+        <div>
+            <h3>Product</h3>
+            <ul>
+                <li><a href="products.html?category=sanitary-valves-and-fitting">Sanitary Valves & Fitting</a></li>
+                <li><a href="products.html?category=sensor-and-switch">Sensor & Switch</a></li>
+                <li><a href="products.html?category=pneumatic-and-hydraulics">Pneumatic & Hydraulics</a></li>
+            </ul>
+        </div>
+        <div>
+            <h3>Contact</h3>
+            <p>Jakarta Barat</p>
+            <p>(021) 6265092</p>
+        </div>
+    </div>
+</footer>
+
+<script type="module" src="js/main.js"></script>
+
+</body>
+</html>
